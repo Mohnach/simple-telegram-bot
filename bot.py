@@ -7,6 +7,7 @@ import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from basic_answers import greet_user, talk_to_me
 from ephem_skills import planet_info, next_moon
+from words_skills import words_counter
 
 # Настройки прокси
 PROXY = {
@@ -29,6 +30,7 @@ def main():
     dp.add_handler(CommandHandler("start", greet_user))
     dp.add_handler(CommandHandler("planet", planet_info))
     dp.add_handler(CommandHandler("next_full_moon", next_moon))
+    dp.add_handler(CommandHandler("wordcount", words_counter))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
 
     mybot.start_polling()
