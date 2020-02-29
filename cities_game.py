@@ -17,17 +17,20 @@ class CitiesGame:
 
         if self.last_letter != '':
            if city[0] != self.last_letter.upper():
-               raise ValueError(f'Ваш город должен начинаться на {self.last_letter}')
+               return {'status' : 'unacceptable_turn', 'message' : f'Ваш город должен начинаться на {self.last_letter}'}
+              # raise ValueError(f'Ваш город должен начинаться на {self.last_letter}')
 
         if city in self.cities_base:
             self.set_last_letter(city)
             print(self.last_letter)
             self.cities_base.remove(city)
         else:
-            print("Недопустимый ход")
-            raise ValueError("Недопустимый ход")
+            print("Недопустимый город")
+            return {'status' : 'unacceptable_turn', 'message' : 'Недопустимый город'}
+            #raise ValueError("Недопустимый ход")
+        return {'status' : 'ok', 'message' : ''}
 
-    def bot_turn(self, update):
+    def bot_turn(self):
         # ищем город на заданную букву
         # Если нашли
         #   , то возвращаем город
@@ -35,20 +38,23 @@ class CitiesGame:
         #   передаем ход
         # иначе
         #   - бот проиграл
-        self.check_cities_list()
+        result = self.check_cities_list()
+        if result.get('status') == 'game_over':
+            return result
 
         for city in self.cities_base:
             if city[0] == self.last_letter.upper():
-                update.message.reply_text(f'Ход бота: {city}')
+                result_message = f'Ход бота: {city}'
                 
                 self.set_last_letter(city)
-                update.message.reply_text(f'Вам ходить с: {self.last_letter.upper()}')
+                result_message += f'\nВам ходить с: {self.last_letter.upper()}'
                 
                 self.cities_base.remove(city)
-                break
+                return {'status' : 'ok', 'message' : result_message}
         else:
             print('game over')
-            raise NameError('Бот сдается')
+            return {'status' : 'game_over', 'message' : 'Бот сдается'}
+            #raise NameError('Бот сдается')
 
     def set_last_letter(self, city):
         last_letter = city[-1]
@@ -62,7 +68,9 @@ class CitiesGame:
     def check_cities_list(self):
         if len(self.cities_base) == 0:
             print('game over')
-            raise NameError('города закончились')
+            return {'status' : 'game_over', 'message' : 'Города закончились'}
+            #raise NameError('города закончились')
+        return {'status' : 'ok', 'message' : 'Города в базе еще не закончились'}
 
     def init_base(self):
         # инициализируем базу городов
@@ -101,18 +109,32 @@ def get_user_id(update):
     print(update.message.chat.username)
     return user_id
 
+def print_message(message, update):
+    print(message)
+    if update is not None:
+        update.message.reply_text(message)
+
+def check_result(result, name, update):
+    if result.get('status') == 'ok':
+        if result.get('message') != '':
+            print_message(result.get('message'), update)
+        return True
+    elif result.get('status') == 'unacceptable_turn':
+        print_message(result.get('message'), update)
+        return False
+    elif result.get('status') == 'game_over':
+        print_message(result.get('message'), update)
+        del dict_of_games[name]
+        return False
+
 def play_round(update, name, city):
     game = init_game(update, name)
 
-    try:
-        game.human_turn(city)
-        # не передавать update внутрь игры
-        game.bot_turn(update)
-    except ValueError as try_again:
-        update.message.reply_text(f'Попробуй еще: {try_again}')
-    except NameError as game_over:
-        update.message.reply_text(f'game over: {game_over}')
-        del dict_of_games[name]
+    result = game.human_turn(city)
+
+    if check_result(result, name, update):
+        result = game.bot_turn()
+        check_result(result, name, update)
 
 def cities_game(bot, update):
 
