@@ -11,14 +11,15 @@ class CitiesGame:
         # если нашли
         #   фиксируем букву
         #   передаем ход боту
-        self.check_cities_list()
+        result = self.check_cities_list()
+        if result.get('status') == 'game_over':
+            return result
         
         print(city)
 
         if self.last_letter != '':
            if city[0] != self.last_letter.upper():
                return {'status' : 'unacceptable_turn', 'message' : f'Ваш город должен начинаться на {self.last_letter}'}
-              # raise ValueError(f'Ваш город должен начинаться на {self.last_letter}')
 
         if city in self.cities_base:
             self.set_last_letter(city)
@@ -27,7 +28,7 @@ class CitiesGame:
         else:
             print("Недопустимый город")
             return {'status' : 'unacceptable_turn', 'message' : 'Недопустимый город'}
-            #raise ValueError("Недопустимый ход")
+
         return {'status' : 'ok', 'message' : ''}
 
     def bot_turn(self):
@@ -54,7 +55,6 @@ class CitiesGame:
         else:
             print('game over')
             return {'status' : 'game_over', 'message' : 'Бот сдается'}
-            #raise NameError('Бот сдается')
 
     def set_last_letter(self, city):
         last_letter = city[-1]
@@ -69,7 +69,7 @@ class CitiesGame:
         if len(self.cities_base) == 0:
             print('game over')
             return {'status' : 'game_over', 'message' : 'Города закончились'}
-            #raise NameError('города закончились')
+
         return {'status' : 'ok', 'message' : 'Города в базе еще не закончились'}
 
     def init_base(self):
@@ -103,9 +103,6 @@ def init_game(update, name):
 
 def get_user_id(update):
     user_id = update.message.chat.id
-    # message = update.get('message')
-    # chat = message.get('chat')
-    # print(chat.get('username'))
     print(update.message.chat.username)
     return user_id
 
@@ -141,19 +138,15 @@ def cities_game(bot, update):
     user_text = update.message.text.split()
     if len(user_text) != 2:
         error_text = 'Необходим 1 аргумент'
-        print(error_text)
-        update.message.reply_text(error_text)
+        print_message(error_text, update)
         return
 
     city = user_text[1].title()
 
     play_round(update, get_user_id(update), city)
-    #update.message.reply_text(text)
 
 
 if __name__ == "__main__":
     while True:
         turn = input("Твой ход: ")
         play_round(None, 'test', turn)
-#    play_round('another','Москва')
-#    play_round('test','Москва')
